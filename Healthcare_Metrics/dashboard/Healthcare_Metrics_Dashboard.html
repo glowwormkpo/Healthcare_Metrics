@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Healthcare Metrics — Nurse Staffing Dashboard (Q2 2024)</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+<style>
+:root {
+    --bg-primary: #f4f6f8;
+    --bg-card: #ffffff;
+    --bg-header: #12294a;
+    --text-primary: #1c2733;
+    --text-secondary: #64748b;
+    --text-on-dark: #ffffff;
+    --color-1: #2563eb;
+    --color-2: #f97316;
+    --color-3: #16a34a;
+    --color-4: #dc2626;
+    --color-5: #7c3aed;
+    --color-6: #0891b2;
+    --positive: #16a34a;
+    --negative: #dc2626;
+    --gap: 16px;
+    --radius: 10px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-primary); color: var(--text-primary); line-height:1.5; }
+.dashboard-container { max-width: 1440px; margin: 0 auto; padding: var(--gap); }
+.dashboard-header { background: var(--bg-header); color: var(--text-on-dark); padding: 22px 26px; border-radius: var(--radius); margin-bottom: var(--gap); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; }
+.dashboard-header h1 { font-size: 21px; font-weight:600; }
+.dashboard-header p { font-size:13px; color: rgba(255,255,255,0.65); margin-top:4px; }
+.filters { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+.filter-group { display:flex; align-items:center; gap:6px; }
+.filter-group label { font-size:12px; color: rgba(255,255,255,0.75); }
+.filter-group select, .filter-group input[type="text"] { padding:7px 10px; border:1px solid rgba(255,255,255,0.25); border-radius:6px; background: rgba(255,255,255,0.12); color: var(--text-on-dark); font-size:13px; }
+.filter-group select option { background: var(--bg-header); color: var(--text-on-dark); }
+.filter-group input::placeholder { color: rgba(255,255,255,0.6); }
+
+.kpi-row { display:grid; grid-template-columns: repeat(auto-fit, minmax(210px,1fr)); gap: var(--gap); margin-bottom: var(--gap); }
+.kpi-card { background: var(--bg-card); border-radius: var(--radius); padding: 18px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.kpi-label { font-size:12px; color: var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; }
+.kpi-value { font-size:26px; font-weight:700; }
+.kpi-sub { font-size:12px; color: var(--text-secondary); margin-top:4px; }
+
+.chart-row { display:grid; grid-template-columns: repeat(auto-fit, minmax(420px,1fr)); gap: var(--gap); margin-bottom: var(--gap); }
+.chart-container { background: var(--bg-card); border-radius: var(--radius); padding: 18px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.chart-container h3 { font-size:14px; font-weight:600; margin-bottom:4px; }
+.chart-container .subtitle { font-size:12px; color: var(--text-secondary); margin-bottom:14px; }
+.chart-container canvas { max-height: 300px; }
+.chart-tall canvas { max-height: 420px; }
+
+.table-section { background: var(--bg-card); border-radius: var(--radius); padding: 18px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow-x:auto; margin-bottom: var(--gap); }
+.table-section h3 { font-size:14px; font-weight:600; margin-bottom:4px; }
+.table-section .subtitle { font-size:12px; color: var(--text-secondary); margin-bottom:14px; }
+.data-table { width:100%; border-collapse: collapse; font-size:13px; }
+.data-table thead th { text-align:left; padding:9px 10px; border-bottom:2px solid #e2e8f0; color: var(--text-secondary); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap; user-select:none; cursor:pointer; }
+.data-table thead th:hover { color: var(--text-primary); background:#f8fafc; }
+.data-table tbody td { padding:9px 10px; border-bottom:1px solid #f0f0f0; white-space:nowrap; }
+.data-table tbody tr:hover { background:#f8fafc; }
+.pagination { display:flex; gap:10px; align-items:center; margin-top:12px; font-size:12px; color: var(--text-secondary); }
+.pagination button { padding:5px 10px; border:1px solid #e2e8f0; background:white; border-radius:6px; cursor:pointer; font-size:12px; }
+.pagination button:disabled { opacity:0.4; cursor:default; }
+.badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; }
+.badge-low { background:#fee2e2; color:#b91c1c; }
+.badge-mid { background:#fef3c7; color:#92400e; }
+.badge-good { background:#dcfce7; color:#15803d; }
+
+.dashboard-footer { text-align:center; font-size:12px; color: var(--text-secondary); padding: 14px 0 6px; }
+
+@media (max-width: 768px) {
+    .dashboard-header { flex-direction:column; align-items:flex-start; }
+    .kpi-row { grid-template-columns: repeat(2,1fr); }
+    .chart-row { grid-template-columns: 1fr; }
+    .filters { flex-direction:column; align-items:flex-start; }
+}
+@media print {
+    body { background: white; }
+    .filters { display:none; }
+    .chart-container { break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+<div class="dashboard-container">
+    <header class="dashboard-header">
+        <div>
+            <h1>Healthcare Metrics — Nurse Staffing Dashboard</h1>
+            <p>PBJ Daily Nurse Staffing, Q2 2024 (Apr 1 – Jun 30) · enriched with CMS Provider Info, Survey &amp; Penalty data</p>
+        </div>
+        <div class="filters">
+            <div class="filter-group">
+                <label for="filter-state">State</label>
+                <select id="filter-state" onchange="dashboard.applyFilters()">
+                    <option value="all">All States</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="filter-search">Search facility</label>
+                <input type="text" id="filter-search" placeholder="Facility name..." oninput="dashboard.applyFilters()">
+            </div>
+        </div>
+    </header>
+
+    <section class="kpi-row">
+        <div class="kpi-card">
+            <div class="kpi-label">Facilities Monitored</div>
+            <div class="kpi-value" id="kpi-facilities">-</div>
+            <div class="kpi-sub" id="kpi-facilities-sub">across 52 states/territories</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Avg Nurse-to-Patient Ratio</div>
+            <div class="kpi-value" id="kpi-ratio">-</div>
+            <div class="kpi-sub">nurse hours per resident per day (RN+LPN+CNA)</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Contract Staff Share</div>
+            <div class="kpi-value" id="kpi-contract">-</div>
+            <div class="kpi-sub">of total nurse hours, national avg</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Avg Patient Census</div>
+            <div class="kpi-value" id="kpi-census">-</div>
+            <div class="kpi-sub">residents per facility per day</div>
+        </div>
+    </section>
+
+    <section class="chart-row">
+        <div class="chart-container">
+            <h3>Patient Census &amp; Nurse-to-Patient Ratio — Daily Trend</h3>
+            <div class="subtitle">National average across all reporting facilities, Q2 2024</div>
+            <canvas id="chart-daily-trend"></canvas>
+        </div>
+        <div class="chart-container">
+            <h3>Contract vs. Employed Nurse Hours</h3>
+            <div class="subtitle">National composition of total nurse hours</div>
+            <canvas id="chart-contract-doughnut"></canvas>
+        </div>
+    </section>
+
+    <section class="chart-row">
+        <div class="chart-container chart-tall">
+            <h3>Total Nurse Hours by State</h3>
+            <div class="subtitle">Sum of RN + LPN + CNA hours, Q2 2024 (top 20 states)</div>
+            <canvas id="chart-state-hours"></canvas>
+        </div>
+        <div class="chart-container chart-tall">
+            <h3>States Relying Most on Contract Nurses</h3>
+            <div class="subtitle">Contract hours as % of total nurse hours (top 10)</div>
+            <canvas id="chart-contract-reliance"></canvas>
+        </div>
+    </section>
+
+    <section class="chart-row">
+        <div class="chart-container">
+            <h3>Top 10 Busiest Hospitals</h3>
+            <div class="subtitle">Highest total nurse hours, Q2 2024</div>
+            <canvas id="chart-top10"></canvas>
+        </div>
+        <div class="table-section" style="box-shadow:none; padding:0;">
+            <div class="chart-container" style="height:100%;">
+                <h3>Facilities with Lowest Staffing Coverage</h3>
+                <div class="subtitle">Lowest nurse hrs/patient/day, census ≥ 30. Values this low usually signal missing or unverified staffing data.</div>
+                <table class="data-table">
+                    <thead><tr><th>Facility</th><th>State</th><th>Hrs/Pt/Day</th><th>Census</th><th>Staffing ★</th></tr></thead>
+                    <tbody id="lowcov-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section class="table-section">
+        <h3>Facility Detail</h3>
+        <div class="subtitle" id="facility-table-subtitle">All facilities — click column headers to sort, use filters above to narrow</div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th data-field="provname">Facility</th>
+                    <th data-field="state">State</th>
+                    <th data-field="city">City</th>
+                    <th data-field="ownership">Ownership</th>
+                    <th data-field="beds">Beds</th>
+                    <th data-field="avg_census">Avg Census</th>
+                    <th data-field="total_hours">Total Nurse Hrs</th>
+                    <th data-field="avg_ratio">Hrs/Pt/Day</th>
+                    <th data-field="contract_share">Contract %</th>
+                    <th data-field="overall_rating">Overall ★</th>
+                    <th data-field="staffing_rating">Staffing ★</th>
+                    <th data-field="health_deficiencies">Health Defs</th>
+                    <th data-field="total_fines">Total Fines</th>
+                </tr>
+            </thead>
+            <tbody id="facility-table-body"></tbody>
+        </table>
+        <div class="pagination">
+            <button id="prev-page">&larr; Prev</button>
+            <span id="page-info"></span>
+            <button id="next-page">Next &rarr;</button>
+        </div>
+    </section>
+
+    <footer class="dashboard-footer">
+        Source: CMS Payroll-Based Journal (PBJ) Daily Nurse Staffing, Q2 2024 · CMS Nursing Home Compare / Provider Data Catalog, October 2024 release. Built for the Healthcare Metrics project.
+    </footer>
+</div>
+
+<script>
+const DATA = __DATA_JSON__;
+
+const COLORS = ['#2563eb','#f97316','#16a34a','#dc2626','#7c3aed','#0891b2','#ca8a04','#db2777'];
+
+function fmt(v, type) {
+    if (v === null || v === undefined || isNaN(v)) return '—';
+    switch (type) {
+        case 'int': return Math.round(v).toLocaleString();
+        case 'num1': return Number(v).toFixed(1);
+        case 'num2': return Number(v).toFixed(2);
+        case 'pct': return Number(v).toFixed(1) + '%';
+        case 'money': return '$' + Math.round(v).toLocaleString();
+        case 'compact':
+            if (v >= 1e6) return (v/1e6).toFixed(1) + 'M';
+            if (v >= 1e3) return (v/1e3).toFixed(1) + 'K';
+            return Math.round(v).toLocaleString();
+        default: return v;
+    }
+}
+
+function starBadge(n) {
+    if (n === null || n === undefined) return '—';
+    const cls = n <= 2 ? 'badge-low' : (n === 3 ? 'badge-mid' : 'badge-good');
+    return `<span class="badge ${cls}">${n}★</span>`;
+}
+
+class Dashboard {
+    constructor(data) {
+        this.data = data;
+        this.filteredFacilities = data.facilities;
+        this.charts = {};
+        this.page = 0;
+        this.pageSize = 50;
+        this.sortField = 'total_hours';
+        this.sortDir = 'desc';
+        this.init();
+    }
+
+    init() {
+        this.populateStateFilter();
+        this.renderKPIs();
+        this.renderStaticCharts();
+        this.setupTableSorting();
+        this.setupPagination();
+        this.applyFilters();
+    }
+
+    populateStateFilter() {
+        const select = document.getElementById('filter-state');
+        const states = [...new Set(this.data.facilities.map(f => f.state))].sort();
+        states.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s; opt.textContent = s;
+            select.appendChild(opt);
+        });
+    }
+
+    renderKPIs() {
+        const k = this.data.kpis;
+        document.getElementById('kpi-facilities').textContent = fmt(k.total_facilities, 'int');
+        document.getElementById('kpi-facilities-sub').textContent = `across ${k.num_states} states/territories`;
+        document.getElementById('kpi-ratio').textContent = fmt(k.avg_ratio, 'num2');
+        document.getElementById('kpi-contract').textContent = fmt(k.contract_share, 'pct');
+        document.getElementById('kpi-census').textContent = fmt(k.avg_census, 'num1');
+    }
+
+    renderStaticCharts() {
+        // Daily trend: dual axis line chart
+        const daily = this.data.daily;
+        this.charts.dailyTrend = new Chart(document.getElementById('chart-daily-trend').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: daily.map(d => d.date),
+                datasets: [
+                    { label: 'Avg Patient Census', data: daily.map(d => d.avg_census), borderColor: COLORS[0], backgroundColor: COLORS[0]+'20', yAxisID: 'y', tension:0.3, pointRadius:0, borderWidth:2 },
+                    { label: 'Nurse Hrs / Patient / Day', data: daily.map(d => d.avg_ratio), borderColor: COLORS[1], backgroundColor: COLORS[1]+'20', yAxisID: 'y1', tension:0.3, pointRadius:0, borderWidth:2 },
+                ]
+            },
+            options: {
+                responsive:true, maintainAspectRatio:false,
+                interaction: { mode:'index', intersect:false },
+                plugins: { legend: { position:'top', labels:{usePointStyle:true, padding:14, font:{size:11}} } },
+                scales: {
+                    x: { ticks: { maxTicksLimit: 10, font:{size:10} }, grid:{display:false} },
+                    y: { position:'left', title:{display:true, text:'Avg Census', font:{size:11}} },
+                    y1: { position:'right', title:{display:true, text:'Hrs/Patient/Day', font:{size:11}}, grid:{display:false} },
+                }
+            }
+        });
+
+        // Contract vs employed doughnut
+        const ctrPct = this.data.kpis.contract_share;
+        this.charts.contractDoughnut = new Chart(document.getElementById('chart-contract-doughnut').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Employed Staff', 'Contract Staff'],
+                datasets: [{ data: [100-ctrPct, ctrPct], backgroundColor: [COLORS[0]+'CC', COLORS[3]+'CC'], borderColor:'#fff', borderWidth:2 }]
+            },
+            options: {
+                responsive:true, maintainAspectRatio:false, cutout:'62%',
+                plugins: { legend: { position:'right', labels:{usePointStyle:true, padding:14} },
+                    tooltip: { callbacks: { label: (c) => `${c.label}: ${c.parsed.toFixed(1)}%` } } }
+            }
+        });
+
+        // State hours bar (top 20)
+        const statesSorted = [...this.data.states].sort((a,b) => b.total_hours - a.total_hours).slice(0,20);
+        this.charts.stateHours = new Chart(document.getElementById('chart-state-hours').getContext('2d'), {
+            type: 'bar',
+            data: { labels: statesSorted.map(s=>s.state), datasets: [{ label:'Total Nurse Hours', data: statesSorted.map(s=>s.total_hours), backgroundColor: COLORS[0]+'CC', borderRadius:3 }] },
+            options: {
+                responsive:true, maintainAspectRatio:false, indexAxis:'y',
+                plugins: { legend:{display:false}, tooltip:{ callbacks:{ label:(c)=>fmt(c.parsed.x,'compact')+' hrs' } } },
+                scales: { x: { ticks:{ callback:(v)=>fmt(v,'compact') } } }
+            }
+        });
+
+        // Contract reliance top 10
+        const cr = this.data.contract_reliance.slice(0,10);
+        this.charts.contractReliance = new Chart(document.getElementById('chart-contract-reliance').getContext('2d'), {
+            type: 'bar',
+            data: { labels: cr.map(s=>s.state), datasets: [{ label:'Contract %', data: cr.map(s=>s.contract_share), backgroundColor: COLORS[3]+'CC', borderRadius:3 }] },
+            options: {
+                responsive:true, maintainAspectRatio:false, indexAxis:'y',
+                plugins: { legend:{display:false}, tooltip:{ callbacks:{ label:(c)=>c.parsed.x.toFixed(1)+'%' } } },
+                scales: { x: { ticks:{ callback:(v)=>v+'%' } } }
+            }
+        });
+
+        // Top 10 busiest
+        const t10 = this.data.top10_busiest;
+        this.charts.top10 = new Chart(document.getElementById('chart-top10').getContext('2d'), {
+            type: 'bar',
+            data: { labels: t10.map(s=>s.provname.length>28?s.provname.slice(0,26)+'…':s.provname), datasets: [{ label:'Total Nurse Hours', data: t10.map(s=>s.total_hours), backgroundColor: COLORS[4]+'CC', borderRadius:3 }] },
+            options: {
+                responsive:true, maintainAspectRatio:false, indexAxis:'y',
+                plugins: { legend:{display:false}, tooltip:{ callbacks:{ label:(c)=>fmt(c.parsed.x,'compact')+' hrs' } } },
+                scales: { x: { ticks:{ callback:(v)=>fmt(v,'compact') } } }
+            }
+        });
+
+        // Lowest coverage table (static)
+        const lc = this.data.lowest_coverage;
+        document.getElementById('lowcov-table-body').innerHTML = lc.map(r => `
+            <tr><td>${r.provname}</td><td>${r.state}</td><td>${fmt(r.avg_ratio,'num2')}</td><td>${fmt(r.avg_census,'num1')}</td><td>${starBadge(r.staffing_rating)}</td></tr>
+        `).join('');
+    }
+
+    setupTableSorting() {
+        document.querySelectorAll('.data-table thead th[data-field]').forEach(th => {
+            th.addEventListener('click', () => {
+                const field = th.dataset.field;
+                if (this.sortField === field) { this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc'; }
+                else { this.sortField = field; this.sortDir = 'desc'; }
+                this.page = 0;
+                this.renderTable();
+            });
+        });
+    }
+
+    setupPagination() {
+        document.getElementById('prev-page').addEventListener('click', () => { if (this.page>0){ this.page--; this.renderTable(); } });
+        document.getElementById('next-page').addEventListener('click', () => {
+            const maxPage = Math.ceil(this.filteredFacilities.length / this.pageSize) - 1;
+            if (this.page < maxPage) { this.page++; this.renderTable(); }
+        });
+    }
+
+    applyFilters() {
+        const state = document.getElementById('filter-state').value;
+        const search = document.getElementById('filter-search').value.trim().toLowerCase();
+        this.filteredFacilities = this.data.facilities.filter(f => {
+            if (state !== 'all' && f.state !== state) return false;
+            if (search && !f.provname.toLowerCase().includes(search)) return false;
+            return true;
+        });
+        document.getElementById('facility-table-subtitle').textContent =
+            `${this.filteredFacilities.length.toLocaleString()} facilities shown — click column headers to sort`;
+        this.page = 0;
+        this.renderTable();
+    }
+
+    renderTable() {
+        const field = this.sortField, dir = this.sortDir;
+        const sorted = [...this.filteredFacilities].sort((a,b) => {
+            let av = a[field], bv = b[field];
+            if (av === null) av = -Infinity; if (bv === null) bv = -Infinity;
+            if (typeof av === 'string') { av = av.toLowerCase(); bv = bv.toLowerCase(); }
+            const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+            return dir === 'asc' ? cmp : -cmp;
+        });
+        const start = this.page * this.pageSize;
+        const pageRows = sorted.slice(start, start + this.pageSize);
+        document.getElementById('facility-table-body').innerHTML = pageRows.map(r => `
+            <tr>
+                <td>${r.provname}</td>
+                <td>${r.state}</td>
+                <td>${r.city}</td>
+                <td>${r.ownership || '—'}</td>
+                <td>${fmt(r.beds,'int')}</td>
+                <td>${fmt(r.avg_census,'num1')}</td>
+                <td>${fmt(r.total_hours,'compact')}</td>
+                <td>${fmt(r.avg_ratio,'num2')}</td>
+                <td>${fmt(r.contract_share,'pct')}</td>
+                <td>${starBadge(r.overall_rating)}</td>
+                <td>${starBadge(r.staffing_rating)}</td>
+                <td>${fmt(r.health_deficiencies,'int')}</td>
+                <td>${fmt(r.total_fines,'money')}</td>
+            </tr>
+        `).join('');
+        const totalPages = Math.max(1, Math.ceil(sorted.length / this.pageSize));
+        document.getElementById('page-info').textContent = `Page ${this.page+1} of ${totalPages} (${sorted.length.toLocaleString()} facilities)`;
+        document.getElementById('prev-page').disabled = this.page === 0;
+        document.getElementById('next-page').disabled = this.page >= totalPages - 1;
+    }
+}
+
+const dashboard = new Dashboard(DATA);
+</script>
+</body>
+</html>
