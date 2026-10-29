@@ -1,9 +1,10 @@
+import os
 import pandas as pd
 import numpy as np
 import sys, gc
 
-UP = "/sessions/clever-vibrant-feynman/mnt/uploads/"
-pbj_provs = set(open("/sessions/clever-vibrant-feynman/mnt/outputs/pbj_provs.txt").read().splitlines())
+UP = os.environ.get("RAW_DIR", "raw_data/")  # folder holding the CMS source CSVs
+pbj_provs = set(open(os.path.join(os.environ.get("OUT_DIR", "data/"), "pbj_provs.txt")).read().splitlines())
 
 files = sys.argv[1:]
 ccn_col_candidates = ["CMS Certification Number (CCN)", "PROVNUM"]

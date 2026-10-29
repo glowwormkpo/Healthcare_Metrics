@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import gc, os
 
-UP = "/sessions/clever-vibrant-feynman/mnt/uploads/"
+UP = os.environ.get("RAW_DIR", "raw_data/")  # folder holding the CMS source CSVs
 
 files = [
     "NH_ProviderInfo_Oct2024.csv",

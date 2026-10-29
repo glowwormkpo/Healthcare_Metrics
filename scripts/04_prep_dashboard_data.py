@@ -4,11 +4,12 @@ Fixes the daily-national ratio (needs to be the mean of facility-level daily
 ratios, not sum(hours)/mean(census)), and trims/rounds everything for a
 reasonably sized HTML file.
 """
+import os
 import pandas as pd
 import numpy as np
 import json
 
-OUT = "/sessions/clever-vibrant-feynman/mnt/outputs/"
+OUT = os.environ.get("OUT_DIR", "data/")  # where outputs are written
 
 df = pd.read_pickle(OUT + "pbj_clean.pkl")
 df_ratio_safe = df[df["include_in_ratio_calcs"]]

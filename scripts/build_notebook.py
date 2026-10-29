@@ -3,6 +3,7 @@ Builds Healthcare_Metrics_Analysis.ipynb by actually executing each cell's
 code against the real uploaded data and capturing text/plot output, so the
 notebook opens already-run (like File > Save after Kernel > Run All).
 """
+import os
 import io, base64, contextlib, json, sys
 
 import matplotlib
@@ -65,7 +66,7 @@ DATA_DIR = "./"  # folder containing the original CMS CSVs
 """)
 # Override for THIS build run only, so we execute against the real uploaded files while
 # the notebook's visible source stays portable (relative path) for whoever downloads it.
-ns["DATA_DIR"] = "/sessions/clever-vibrant-feynman/mnt/uploads/"
+ns["DATA_DIR"] = os.environ.get("RAW_DIR", "raw_data/")
 
 # ---------------------------------------------------------------
 md("## 1. Load the primary dataset")
@@ -330,7 +331,7 @@ notebook = {
     "nbformat_minor": 5,
 }
 
-OUT = "/sessions/clever-vibrant-feynman/mnt/outputs/"
+OUT = os.environ.get("OUT_DIR", "data/")  # where outputs are written
 with open("/tmp/build/Healthcare_Metrics_Analysis.ipynb", "w") as f:
     json.dump(notebook, f)
 

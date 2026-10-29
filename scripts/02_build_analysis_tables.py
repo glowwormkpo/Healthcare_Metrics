@@ -3,11 +3,12 @@ Step 2: Aggregate cleaned PBJ staffing to useful grains and enrich with
 ProviderInfo / SurveySummary / Penalties context (facility-level attributes).
 Produces the tables the metrics + dashboard scripts consume.
 """
+import os
 import pandas as pd
 import numpy as np
 
-UP = "/sessions/clever-vibrant-feynman/mnt/uploads/"
-OUT = "/sessions/clever-vibrant-feynman/mnt/outputs/"
+UP = os.environ.get("RAW_DIR", "raw_data/")  # folder holding the CMS source CSVs
+OUT = os.environ.get("OUT_DIR", "data/")  # where outputs are written
 
 df = pd.read_pickle(OUT + "pbj_clean.pkl")
 
