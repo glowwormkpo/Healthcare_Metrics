@@ -20,7 +20,16 @@ This analysis is built on CMS public data, which is too large to version in git:
 - **PBJ Daily Nurse Staffing, Q2 2024** (`PBJ_Daily_Nurse_Staffing_Q2_2024.csv`, ~220MB) — [CMS Provider Data Catalog](https://data.cms.gov/provider-data/)
 - **CMS Nursing Home Compare / Provider Data Catalog, October 2024 release** — Provider Info, Ownership, Survey Summary, Health/Fire Safety Citations, MDS & Claims Quality Measures, Penalties, COVID Vaccination Rates, SNF QRP, SNF VBP files
 
-To reproduce the pipeline from scratch: download these files from CMS and place them in a local folder, then run the scripts in `scripts/` in order (each one reads from `./` by default — edit the `DATA_DIR`/`UP` variable at the top of each script, or run from the folder containing the CSVs). The notebook in `notebooks/` does the same thing end-to-end and already has its output baked in, so you don't need to re-run it just to see the results.
+To reproduce the pipeline from scratch: download these files from CMS into a local `raw_data/` folder (ignored by git), then run the scripts in order from the repo root:
+
+```bash
+python scripts/01_clean_pbj.py
+python scripts/02_build_analysis_tables.py
+python scripts/03_metrics_and_questions.py
+python scripts/04_prep_dashboard_data.py
+```
+
+Set `RAW_DIR` or `OUT_DIR` to use different folders (defaults: `raw_data/` and `data/`). `scripts/build_notebook.py` rebuilds the notebook; it already has its output baked in, so you don't need to re-run it just to see the results.
 
 ## Quick look
 
@@ -41,3 +50,12 @@ Full details, caveats, and the data dictionary are in `docs/Healthcare_Metrics_I
 ## Exploratory analysis
 
 The scripts in `eda/` profiled the raw CMS files (row counts, null rates, key coverage against the PBJ provider list) before the pipeline in `scripts/` was written. They are kept as-is for reference; findings are summarized in `docs/Healthcare_Metrics_EDA_Summary.md`.
+
+## Project history
+
+This repository was reorganized in October 2026. The analysis was first built in July 2026 and uploaded to GitHub in October 2026 as a nested folder alongside a duplicate older copy. The pull requests that followed cleaned that up as reviewable changes:
+
+1. Removed the duplicate older copy of the project (`github_repo 2/`)
+2. Moved the project to the repository root and added the `.gitignore` and `scripts/build_notebook.py`
+3. Added the exploratory EDA scripts from the first build
+4. Made script paths portable so the pipeline runs from a fresh clone

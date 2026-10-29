@@ -8,11 +8,12 @@ Per requirements.md section 4 (Data Cleaning):
  - check unrealistic staffing values (extreme outliers) -> flag, cap/exclude
  - create derived columns for total nurse hours
 """
+import os
 import pandas as pd
 import numpy as np
 
-UP = "/sessions/clever-vibrant-feynman/mnt/uploads/"
-OUT = "/sessions/clever-vibrant-feynman/mnt/outputs/"
+UP = os.environ.get("RAW_DIR", "raw_data/")  # folder holding the CMS source CSVs
+OUT = os.environ.get("OUT_DIR", "data/")  # where outputs are written
 
 df = pd.read_csv(UP + "PBJ_Daily_Nurse_Staffing_Q2_2024.csv",
                   dtype={"PROVNUM": str, "COUNTY_FIPS": str},

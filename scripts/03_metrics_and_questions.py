@@ -2,10 +2,11 @@
 Step 3: Compute the 5 selected metrics and answer the 5 analytical questions
 from the requirements doc, using the aggregated tables from step 2.
 """
+import os
 import pandas as pd
 import numpy as np
 
-OUT = "/sessions/clever-vibrant-feynman/mnt/outputs/"
+OUT = os.environ.get("OUT_DIR", "data/")  # where outputs are written
 
 fac_summary = pd.read_csv(OUT + "facility_summary.csv", dtype={"PROVNUM": str})
 state_summary = pd.read_csv(OUT + "state_summary.csv")

@@ -1,7 +1,8 @@
+import os
 import pandas as pd
 import numpy as np
 
-path = "/sessions/clever-vibrant-feynman/mnt/uploads/PBJ_Daily_Nurse_Staffing_Q2_2024.csv"
+path = os.path.join(os.environ.get("RAW_DIR", "raw_data/"), "PBJ_Daily_Nurse_Staffing_Q2_2024.csv")
 
 df = pd.read_csv(path, dtype={"PROVNUM": str, "COUNTY_FIPS": str}, low_memory=False, encoding="cp1252")
 
