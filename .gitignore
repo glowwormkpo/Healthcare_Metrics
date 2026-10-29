@@ -1,0 +1,30 @@
+# Raw CMS source data (large; download separately, see README)
+raw_data/
+*.csv.gz
+
+# Large intermediate/working files generated during analysis — regenerate locally via scripts/
+pbj_clean.csv
+pbj_clean_full.csv
+pbj_clean.pkl
+dashboard_data.json
+
+# Any accidental copies of source CSVs over GitHub's size limits
+PBJ_Daily_Nurse_Staffing_Q2_2024.csv
+NH_HealthCitations_Oct2024.csv
+NH_FireSafetyCitations_Oct2024.csv
+NH_QualityMsr_MDS_Oct2024.csv
+Skilled_Nursing_Facility_Quality_Reporting_Program_Provider_Data_Oct2024.csv
+NH_Ownership_Oct2024.csv
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
