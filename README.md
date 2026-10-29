@@ -9,6 +9,7 @@ docs/         Methodology, EDA findings, data dictionary, and insights writeup
 scripts/      The analysis pipeline, run in order (01 -> 04)
 notebooks/    Jupyter notebook version of the full pipeline, pre-executed with output/charts
 dashboard/    Self-contained interactive HTML dashboard (open directly in a browser)
+eda/          Exploratory scripts used to profile the raw CMS files before the pipeline was built
 data/         Aggregated output tables (facility-level, state-level, and answers to the analytical questions)
 ```
 
@@ -36,3 +37,7 @@ To reproduce the pipeline from scratch: download these files from CMS and place 
 - Vermont, Maine, and New Hampshire lean most heavily on contract/agency nursing.
 
 Full details, caveats, and the data dictionary are in `docs/Healthcare_Metrics_Insights_and_Data_Dictionary.md`.
+
+## Exploratory analysis
+
+The scripts in `eda/` profiled the raw CMS files (row counts, null rates, key coverage against the PBJ provider list) before the pipeline in `scripts/` was written. They are kept as-is for reference; findings are summarized in `docs/Healthcare_Metrics_EDA_Summary.md`.
